@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -31,7 +30,13 @@ func main() {
 		return
 	}
 
-	var items []Item
+	// Fetch and parse RSS feeds
+	rssFeeds, err := readRSSFeeds(feedsFilePath)
+	if err != nil {
+		fmt.Println("Failed to read RSS feeds:", err)
+		return
+	}
+	var headlines []string
 	for _, feedURL := range rssFeeds {
 		fp := gofeed.NewParser()
 		feed, err := fp.ParseURL(feedURL)
@@ -41,23 +46,9 @@ func main() {
 		}
 
 		for _, item := range feed.Items {
-			pubDate, err := parsePublishedTime(item.Published)
-			if err != nil {
-				fmt.Printf("Failed to parse published time from %s: %v\n", item.Published, err)
-				continue
-			}
-
-			items = append(items, Item{PubDate: pubDate, Title: item.Title, Link: item.Link})
+			headline := fmt.Sprintf("%s \"%s\" %s  ..  ", item.Published, item.Title, item.Link)
+			headlines = append(headlines, headline)
 		}
-	}
-
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].PubDate.Before(items[j].PubDate)
-	})
-
-	for _, item := range items {
-		headline := fmt.Sprintf("%s \"%s\" %s  ..  ", item.PubDate.Format("2006-01-02 15:04:05"), item.Title, item.Link)
-		headlines = append(headlines, headline)
 	}
 
 	// Join all the headlines into a single string
@@ -103,7 +94,7 @@ func getFeedsFilePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return homeDir + "/.config/" + feedsFile, nil
+	return homeDir + feedsFile, nil
 }
 
 // readRSSFeeds reads the RSS feeds from the given file path
