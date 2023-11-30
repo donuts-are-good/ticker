@@ -94,8 +94,9 @@ func getFeedsFilePath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return homeDir + feedsFile, nil
+	return homeDir + "/" + feedsFile, nil
 }
+
 
 // readRSSFeeds reads the RSS feeds from the given file path
 func readRSSFeeds(filePath string) ([]string, error) {
